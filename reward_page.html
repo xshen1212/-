@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奖励管理</title>
+    <style>
+        body {
+            font-family: 'SimSun', '宋体', serif;
+            background-color: #f0e6d2;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #back-button {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: #8b4513;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            z-index: 1000;
+        }
+        #back-button:hover {
+            background-color: #6d3609;
+        }
+        .reward-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        .reward-item input[type="text"] {
+            width: 60%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .reward-item input[type="number"] {
+            width: 15%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .reward-item button {
+            background-color: #d4af37;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .reward-item button:hover {
+            background-color: #c49b30;
+        }
+    </style>
+</head>
+<body>
+    <button id="back-button" onclick="location.href='task_library.html'">返回任务库</button>
+    <div class="container">
+        <h1>奖励管理</h1>
+        <div id="reward-list">
+            <!-- 奖励内容将动态添加到这里 -->
+        </div>
+        <button onclick="addReward()">添加奖励</button>
+    </div>
+    <script>
+        const STORAGE_KEY = 'rewardsData';
+
+        // 从 localStorage 加载奖励数据
+        function loadRewards() {
+            const storedRewards = localStorage.getItem(STORAGE_KEY);
+            return storedRewards ? JSON.parse(storedRewards) : [
+                { text: '奖励1', probability: 20 },
+                { text: '奖励2', probability: 30 },
+                { text: '奖励3', probability: 50 }
+            ];
+        }
+
+        // 将奖励数据保存到 localStorage
+        function saveRewards() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(rewards));
+        }
+
+        const rewards = loadRewards();
+
+        function renderRewards() {
+            const rewardList = document.getElementById('reward-list');
+            rewardList.innerHTML = '';
+            rewards.forEach((reward, index) => {
+                const rewardItem = document.createElement('div');
+                rewardItem.className = 'reward-item';
+                rewardItem.innerHTML = `
+                    <input type="text" value="${reward.text}" onchange="updateRewardText(${index}, this.value)">
+                    <input type="number" value="${reward.probability}" min="0" max="100" onchange="updateRewardProbability(${index}, this.value)">
+                    <button onclick="removeReward(${index})">删除</button>
+                `;
+                rewardList.appendChild(rewardItem);
+            });
+        }
+
+        function addReward() {
+            rewards.push({ text: '新奖励', probability: 0 });
+            saveRewards();
+            renderRewards();
+        }
+
+        function removeReward(index) {
+            rewards.splice(index, 1);
+            saveRewards();
+            renderRewards();
+        }
+
+        function updateRewardText(index, text) {
+            rewards[index].text = text;
+            saveRewards();
+        }
+
+        function updateRewardProbability(index, probability) {
+            rewards[index].probability = parseInt(probability, 10);
+            if (isNaN(rewards[index].probability) || rewards[index].probability < 0) {
+                rewards[index].probability = 0;
+            }
+            const total = rewards.reduce((sum, reward) => sum + reward.probability, 0);
+            if (total > 100) {
+                alert('总概率不能超过100%。请调整各项概率。');
+                rewards[index].probability = 0; // 重置为0以避免超出
+            }
+            saveRewards();
+            renderRewards();
+        }
+
+        renderRewards();
+    </script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>古诗管理</title>
+    <style>
+        body {
+            font-family: 'SimSun', '宋体', serif;
+            background-color: #f0e6d2;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+        .column {
+            width: 48%;
+        }
+        h1, h2 {
+            color: #8b4513;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        form {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        input {
+            width: 28%;
+            padding: 5px;
+            margin-right: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        button {
+            background-color: #d4af37;
+            color: white;
+            border: none;
+            padding: 5px 8px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+        button:hover {
+            background-color: #c49b30;
+        }
+        .poem-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .poem-table th, .poem-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .poem-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .poem-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .poem-actions {
+            white-space: nowrap;
+        }
+        .poem-actions button {
+            margin: 0 2px;
+        }
+        #home-button, #reward-button {
+            position: fixed;
+            top: 10px;
+            background-color: #8b4513;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            z-index: 1000;
+        }
+        #home-button {
+            left: 10px;
+        }
+        #reward-button {
+            right: 10px;
+        }
+        #home-button:hover, #reward-button:hover {
+            background-color: #6d3609;
+        }
+    </style>
+</head>
+<body>
+    <button id="home-button" onclick="location.href='index.html'">返回主页</button>
+    <button id="reward-button" onclick="location.href='reward_page.html'">奖励页面</button>
+    <div class="container">
+        <div class="column">
+            <h2>已背古诗</h2>
+            <form id="add-learned-form" class="add-poem-form">
+                <input type="text" class="poem-title" placeholder="古诗" required>
+                <input type="text" class="poem-author" placeholder="作者" required>
+                <input type="text" class="poem-dynasty" placeholder="朝代" required>
+                <button type="submit">添加</button>
+            </form>
+            <table id="learned-table" class="poem-table">
+                <thead>
+                    <tr>
+                        <th>古诗</th>
+                        <th>作者</th>
+                        <th>朝代</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="column">
+            <h2>待背古诗</h2>
+            <form id="add-to-learn-form" class="add-poem-form">
+                <input type="text" class="poem-title" placeholder="古诗" required>
+                <input type="text" class="poem-author" placeholder="作者" required>
+                <input type="text" class="poem-dynasty" placeholder="朝代" required>
+                <button type="submit">添加</button>
+            </form>
+            <table id="to-learn-table" class="poem-table">
+                <thead>
+                    <tr>
+                        <th>古诗</th>
+                        <th>作者</th>
+                        <th>朝代</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        const addLearnedForm = document.getElementById('add-learned-form');
+        const addToLearnForm = document.getElementById('add-to-learn-form');
+        const learnedTable = document.getElementById('learned-table').getElementsByTagName('tbody')[0];
+        const toLearnTable = document.getElementById('to-learn-table').getElementsByTagName('tbody')[0];
+
+        function getPoems(key) {
+            return JSON.parse(localStorage.getItem(key) || '[]');
+        }
+
+        function savePoems(key, poems) {
+            localStorage.setItem(key, JSON.stringify(poems));
+        }
+
+        // 小学生必背古诗词列表
+        const requiredPoems = [
+            { title: "春晓", author: "孟浩然", dynasty: "唐" },
+            { title: "咏鹅", author: "骆宾王", dynasty: "唐" },
+            { title: "登鹳雀楼", author: "王之涣", dynasty: "唐" },
+            { title: "江南", author: "汉乐府", dynasty: "汉" },
+            { title: "悯农", author: "李绅", dynasty: "唐" },
+            { title: "赋得古原草送别", author: "白居易", dynasty: "唐" },
+            { title: "静夜思", author: "李白", dynasty: "唐" },
+            { title: "池上", author: "白居易", dynasty: "唐" },
+            { title: "夜宿山寺", author: "李白", dynasty: "唐" },
+            { title: "望庐山瀑布", author: "李白", dynasty: "唐" },
+            { title: "江畔独步寻花", author: "杜甫", dynasty: "唐" },
+            { title: "望天门山", author: "李白", dynasty: "唐" },
+            { title: "绝句", author: "杜甫", dynasty: "唐" },
+            { title: "春夜喜雨", author: "杜甫", dynasty: "唐" },
+            { title: "枫桥夜泊", author: "张继", dynasty: "唐" },
+            { title: "游子吟", author: "孟郊", dynasty: "唐" },
+            { title: "江雪", author: "柳宗元", dynasty: "唐" },
+            { title: "独坐敬亭山", author: "李白", dynasty: "唐" },
+            { title: "山行", author: "杜牧", dynasty: "唐" },
+            { title: "赠汪伦", author: "李白", dynasty: "唐" },
+            { title: "黄鹤楼送孟浩然之广陵", author: "李白", dynasty: "唐" },
+            { title: "出塞", author: "王昌龄", dynasty: "唐" },
+            { title: "凉州词", author: "王之涣", dynasty: "唐" },
+            { title: "送元二使安西", author: "王维", dynasty: "唐" },
+            { title: "九月九日忆山东兄弟", author: "王维", dynasty: "唐" },
+            { title: "芙蓉楼送辛渐", author: "王昌龄", dynasty: "唐" },
+            { title: "鸟鸣涧", author: "王维", dynasty: "唐" },
+            { title: "寒食", author: "韩翃", dynasty: "唐" },
+            { title: "村居", author: "高鼎", dynasty: "清" },
+            { title: "咏柳", author: "贺知章", dynasty: "唐" },
+            { title: "回乡偶书", author: "贺知章", dynasty: "唐" },
+            { title: "小儿垂钓", author: "胡令能", dynasty: "唐" },
+            { title: "早春呈水部张十八员外", author: "韩愈", dynasty: "唐" },
+            { title: "元日", author: "王安石", dynasty: "宋" },
+            { title: "泊船瓜洲", author: "王安石", dynasty: "宋" },
+            { title: "梅花", author: "王安石", dynasty: "宋" },
+            { title: "江南春", author: "杜牧", dynasty: "唐" },
+            { title: "春望", author: "杜甫", dynasty: "唐" },
+            { title: "望岳", author: "杜甫", dynasty: "唐" },
+            { title: "水调歌头·明月几时有", author: "苏轼", dynasty: "宋" },
+            { title: "如梦令·常记溪亭日暮", author: "李清照", dynasty: "宋" },
+            { title: "江城子·密州出猎", author: "苏轼", dynasty: "宋" },
+            { title: "破阵子·为陈同甫赋壮词以寄之", author: "辛弃疾", dynasty: "宋" },
+            // 古文
+            { title: "《论语》十则", author: "孔子及其弟子", dynasty: "春秋" },
+            { title: "《孟子》七则", author: "孟子及其弟子", dynasty: "战国" },
+            { title: "《礼记》三则", author: "儒家学者", dynasty: "战国至西汉" },
+        ];
+
+        function renderPoemList(tableElement, poems, isLearned) {
+            tableElement.innerHTML = '';
+            poems.forEach((poem, index) => {
+                const row = tableElement.insertRow();
+                row.innerHTML = `
+                    <td>${poem.title}</td>
+                    <td>${poem.author}</td>
+                    <td>${poem.dynasty}</td>
+                    <td class="poem-actions">
+                        ${isLearned ? 
+                            `<button onclick="movePoem('learned', 'to-learn', ${index})">移回待背</button>` : 
+                            `<button onclick="movePoem('to-learn', 'learned', ${index})">标记为已背</button>`
+                        }
+                        <button onclick="deletePoem('${isLearned ? 'learned' : 'to-learn'}', ${index})">删除</button>
+                    </td>
+                `;
+            });
+        }
+
+        function renderAllPoems() {
+            renderPoemList(toLearnTable, getPoems('to-learn'), false);
+            renderPoemList(learnedTable, getPoems('learned'), true);
+        }
+
+        function addPoem(e, key) {
+            e.preventDefault();
+            const form = e.target;
+            const title = form.querySelector('.poem-title').value.trim();
+            const author = form.querySelector('.poem-author').value.trim();
+            const dynasty = form.querySelector('.poem-dynasty').value.trim();
+            if (title && author && dynasty) {
+                const poems = getPoems(key);
+                poems.push({ title, author, dynasty });
+                savePoems(key, poems);
+                form.reset();
+                renderAllPoems();
+            }
+        }
+
+        addLearnedForm.addEventListener('submit', (e) => addPoem(e, 'learned'));
+        addToLearnForm.addEventListener('submit', (e) => addPoem(e, 'to-learn'));
+
+        function movePoem(fromKey, toKey, index) {
+            const fromPoems = getPoems(fromKey);
+            const toPoems = getPoems(toKey);
+            const poem = fromPoems.splice(index, 1)[0];
+            toPoems.push(poem);
+            savePoems(fromKey, fromPoems);
+            savePoems(toKey, toPoems);
+            renderAllPoems();
+        }
+
+        function deletePoem(key, index) {
+            const poems = getPoems(key);
+            poems.splice(index, 1);
+            savePoems(key, poems);
+            renderAllPoems();
+        }
+
+        function addRequiredPoems() {
+            const toLearnPoems = getPoems('to-learn');
+            const newPoems = requiredPoems.filter(poem => 
+                !toLearnPoems.some(p => 
+                    p.title === poem.title && 
+                    p.author === poem.author && 
+                    p.dynasty === poem.dynasty
+                )
+            );
+            
+            if (newPoems.length > 0) {
+                savePoems('to-learn', [...toLearnPoems, ...newPoems]);
+                renderAllPoems();
+                console.log(`已添加 ${newPoems.length} 首新诗词到待背列表。`);
+            } else {
+                console.log('所有必背诗词已在列表中。');
+            }
+        }
+
+        // 在页面加载时自动添加必背诗词
+        addRequiredPoems();
+        renderAllPoems();
+    </script>
+</body>
+</html>
